@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # MLflow en Databricks, paso a paso
 # MAGIC
@@ -133,6 +137,20 @@ print(f"Run: {run.info.run_id} · accuracy {accuracy_score(y_test, pred):.3f}")
 
 # TODO: crea el run regresion_logistica_c01 con C = 0.1, registra accuracy, f1_macro y el tag autor
 
+with mlflow.start_run(run_name="regresion_logistica_c01") as run:
+    C = 0.1
+    modelo = make_pipeline(StandardScaler(), LogisticRegression(C=C, max_iter=1000))
+    modelo.fit(X_train, y_train)
+    pred = modelo.predict(X_test)
+
+    mlflow.log_param("algoritmo", "regresion_logistica_c01")
+    mlflow.log_param("C", C)
+    mlflow.log_metric("accuracy", accuracy_score(y_test, pred))
+    mlflow.log_metric("f1_macro", f1_score(y_test, pred, average="macro"))
+    mlflow.set_tag("autor", "isabel jurado")
+
+print(f"Run: {run.info.run_id} · accuracy {accuracy_score(y_test, pred):.3f}")
+
 
 # COMMAND ----------
 
@@ -200,8 +218,29 @@ print(f"Búsqueda terminada: {len(combinaciones)} runs hijos")
 
 # COMMAND ----------
 
-# TODO: repite la búsqueda agregando min_samples_leaf en [1, 5] dentro del padre busqueda_random_forest_v2
+combinaciones = [
+    {"n_estimators": n, "max_depth": d, "min_samples_leaf": leaf}
+    for n in [10, 50, 150]
+    for d in [2, 4, None]
+    for leaf in [1, 5]
+]
 
+with mlflow.start_run(run_name="busqueda_random_forest_v2") as padre:
+    mlflow.set_tag("etapa", "busqueda")
+    for params in combinaciones:
+        nombre = (
+            f"rf_{params['n_estimators']}"
+            f"_prof_{params['max_depth']}"
+            f"_leaf_{params['min_samples_leaf']}"
+        )
+        with mlflow.start_run(run_name=nombre, nested=True):
+            modelo = RandomForestClassifier(random_state=42, **params).fit(X_train, y_train)
+            pred = modelo.predict(X_test)
+            mlflow.log_params({"algoritmo": "RandomForest", **params})
+            mlflow.log_metric("accuracy", accuracy_score(y_test, pred))
+            mlflow.log_metric("f1_macro", f1_score(y_test, pred, average="macro"))
+
+print(f"Búsqueda terminada: {len(combinaciones)} runs hijos")
 
 # COMMAND ----------
 

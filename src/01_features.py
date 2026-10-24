@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # 01 · Feature table
 # MAGIC
@@ -18,6 +22,8 @@
 # MAGIC Los parámetros llegan desde el job del bundle; si lo corres a mano, usa los widgets.
 
 # COMMAND ----------
+
+# testing CI/CD with databricks
 
 dbutils.widgets.text("catalog", "workspace")
 dbutils.widgets.text("schema", "bakehouse_dev")
